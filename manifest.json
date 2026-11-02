@@ -1,0 +1,15 @@
+{
+ "name": "Stasukelis Consumer Reports",
+ "short_name": "Stasukelis",
+ "start_url": "./",
+ "scope": "./",
+ "display": "standalone",
+ "orientation": "landscape",
+ "background_color": "#1F2225",
+ "theme_color": "#1F2225",
+ "icons": [
+  {"src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png"},
+  {"src": "assets/app-icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any"},
+  {"src": "favicon.svg", "sizes": "any", "type": "image/svg+xml"}
+ ]
+}

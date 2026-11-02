@@ -1,0 +1,23 @@
+/* Stasukelis Consumer Reports: design tokens. From design/source/tokens.css (style guide §10 + Design's kiosk tokens).
+   Fonts are self-hosted woff2 subsets (SIL OFL 1.1, see fonts/OFL.txt). Brand chart colors live in data/site-data.json. */
+@font-face{font-family:"Newsreader";src:url("../fonts/Newsreader-subset.woff2") format("woff2");font-weight:200 800;font-style:normal;font-display:block}
+@font-face{font-family:"Public Sans";src:url("../fonts/PublicSans-subset.woff2") format("woff2");font-weight:100 900;font-style:normal;font-display:block}
+:root{
+  --scr-frame:#1F2225;--scr-frame-text:#F2F1ED;--scr-frame-text-2:#B3B7BB;--scr-frame-control-line:#6E747A;
+  --scr-card:#FAF8F4;--scr-card-text:#1C1D1F;--scr-card-text-2:#55585C;--scr-card-line:#DEDAD2;
+  --scr-neutral-strong:#767A7F;--scr-accent:#3A9A6E;--scr-on-accent:#1F2225;--scr-press-tint:#F3F0EA;
+  --scr-bar-outline-width:1.5px;--scr-bar-outline-light:#000000;--scr-bar-outline-dark:#FFFFFF;
+  --scr-bar-h:28px;--scr-bar-r:14px;--scr-section-bar-h:24px;--scr-section-bar-r:12px;--scr-na-stub-w:88px;
+  --scr-font-serif:"Newsreader",Georgia,serif;--scr-font-sans:"Public Sans",system-ui,-apple-system,sans-serif;
+  --scr-row-h:80px;--scr-row-gap:8px;--scr-row-r:16px;--scr-row-pad-x:16px;
+  --scr-logo-tile:56px;--scr-logo-tile-r:12px;--scr-points-col:132px;--scr-name-col:210px;
+  --scr-touch-min:44px;--scr-touch-pref:60px;--scr-touch-gap:12px;
+  --scr-card-r:24px;--scr-card-shadow:0 1px 2px rgba(0,0,0,.18),0 10px 30px rgba(0,0,0,.28);
+  --scr-focus-ring:0 0 0 2px var(--scr-card),0 0 0 5px var(--scr-accent);
+  --scr-focus-ring-frame:0 0 0 2px var(--scr-frame),0 0 0 5px var(--scr-accent);
+  --scr-ease:cubic-bezier(.2,0,0,1);--scr-ease-zoom:cubic-bezier(.2,.8,.2,1);
+  --scr-press-in:90ms;--scr-press-out:160ms;--scr-zoom:350ms;--scr-crossfade:200ms;--scr-reorder:300ms;
+  --scr-safe:20px;--scr-hold:600ms;--scr-settle:300ms;--scr-section-row-h:64px;--scr-pill-r:999px;
+  --safe-t:max(var(--scr-safe),env(safe-area-inset-top));--safe-r:max(var(--scr-safe),env(safe-area-inset-right));
+  --safe-b:max(var(--scr-safe),env(safe-area-inset-bottom));--safe-l:max(var(--scr-safe),env(safe-area-inset-left));
+}
