@@ -120,7 +120,8 @@
    "logo": {
     "text": "Fisher & Paykel",
     "color": "#006EBE",
-    "placeholder": true
+    "placeholder": false,
+    "file": "fisher-paykel.svg"
    },
    "chartColor": "#006EBE",
    "description": "Founded in Auckland, New Zealand, in 1934 by Woolf Fisher and Maurice Paykel. Part of China's Haier Group since 2012. Makes kitchen and laundry appliances.",
@@ -336,7 +337,8 @@
    "logo": {
     "text": "Bosch",
     "color": "#E20015",
-    "placeholder": true
+    "placeholder": false,
+    "file": "bosch.svg"
    },
    "chartColor": "#E20015",
    "description": "Bosch home appliances are made by BSH Hausgeräte of Munich, Germany, part of the Bosch Group. Robert Bosch founded the company in Stuttgart in 1886.",
@@ -553,7 +555,8 @@
    "logo": {
     "text": "Miele",
     "color": "#8C0014",
-    "placeholder": true
+    "placeholder": false,
+    "file": "miele.svg"
    },
    "chartColor": "#8C0014",
    "description": "A German company founded in 1899 by Carl Miele and Reinhard Zinkann. Still owned by both founding families and based in Gütersloh. Makes kitchen, laundry and floor-care appliances.",
@@ -768,7 +771,9 @@
    "logo": {
     "text": "LG",
     "color": "#A50034",
-    "placeholder": true
+    "placeholder": false,
+    "file": "lg.svg",
+    "fileOnDark": "lg-white.svg"
    },
    "chartColor": "#B32954",
    "description": "LG Electronics is a South Korean company, founded in 1958 as GoldStar and renamed LG in 1995. Makes home appliances, TVs and electronics.",
@@ -985,7 +990,8 @@
    "logo": {
     "text": "GE",
     "color": "#0A2C74",
-    "placeholder": true
+    "placeholder": false,
+    "file": "ge.svg"
    },
    "chartColor": "#0A2C74",
    "description": "GE Appliances is based in Louisville, Kentucky, where it has made appliances since 1953. Formerly part of General Electric, it has been owned by Haier since 2016.",
@@ -1201,7 +1207,8 @@
    "logo": {
     "text": "Speed Queen",
     "color": "#F04923",
-    "placeholder": true
+    "placeholder": false,
+    "file": "speed-queen.png"
    },
    "chartColor": "#F1502C",
    "description": "A laundry brand from Ripon, Wisconsin, with roots in a washer maker started there in 1908. Made by Alliance Laundry Systems, which also builds commercial laundry equipment.",
@@ -1255,7 +1262,8 @@
    "logo": {
     "text": "Whirlpool",
     "color": "#EEB111",
-    "placeholder": true
+    "placeholder": false,
+    "file": "whirlpool.png"
    },
    "chartColor": "#EEB111",
    "description": "Whirlpool Corporation began in 1911 in Benton Harbor, Michigan, making electric wringer washers. It is still based there and also owns KitchenAid and Maytag.",
@@ -1472,7 +1480,8 @@
    "logo": {
     "text": "KitchenAid",
     "color": "#C41230",
-    "placeholder": true
+    "placeholder": false,
+    "file": "kitchenaid.png"
    },
    "chartColor": "#BC112E",
    "description": "Began in 1919 as a stand mixer from the Hobart company in Ohio. Owned by Whirlpool Corporation since 1986. Makes kitchen appliances, from mixers to ranges and refrigerators.",
@@ -1658,7 +1667,8 @@
    "logo": {
     "text": "Frigidaire",
     "color": "#F0415A",
-    "placeholder": true
+    "placeholder": false,
+    "file": "frigidaire.svg"
    },
    "chartColor": "#F0415A",
    "description": "Introduced its first refrigerator in 1918 and took the Frigidaire name in 1919. Part of Sweden's Electrolux Group since 1986. Makes kitchen and laundry appliances.",
@@ -1875,7 +1885,8 @@
    "logo": {
     "text": "Maytag",
     "color": "#002238",
-    "placeholder": true
+    "placeholder": false,
+    "file": "maytag.png"
    },
    "chartColor": "#002035",
    "description": "Founded in Newton, Iowa, in 1893, first making farm equipment before washing machines. Part of Whirlpool Corporation since 2006. Makes kitchen and laundry appliances.",
@@ -2092,7 +2103,8 @@
    "logo": {
     "text": "Kenmore",
     "color": "#017CBA",
-    "placeholder": true
+    "placeholder": false,
+    "file": "kenmore.svg"
    },
    "chartColor": "#1A89C1",
    "description": "Started as a Sears brand in 1913. Now owned by Transformco. In 2026, Curtis International was licensed to make and sell Kenmore appliances in North America.",
@@ -2310,5 +2322,215 @@
     }
    ]
   }
- }
+ },
+ "background": {
+  "enabled": true,
+  "folder": "assets/bg/",
+  "images": [
+   {
+    "file": "bg-refrigeration-bosch-01.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-dishwasher-fisher-paykel-01.webp",
+    "alt": "",
+    "brand": "fisher-paykel"
+   },
+   {
+    "file": "bg-refrigeration-frigidaire-01.webp",
+    "alt": "",
+    "brand": "frigidaire"
+   },
+   {
+    "file": "bg-refrigeration-ge-01.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-laundry-kenmore-01.webp",
+    "alt": "",
+    "brand": "kenmore"
+   },
+   {
+    "file": "bg-range-kitchenaid-01.webp",
+    "alt": "",
+    "brand": "kitchenaid"
+   },
+   {
+    "file": "bg-laundry-lg-01.webp",
+    "alt": "",
+    "brand": "lg"
+   },
+   {
+    "file": "bg-refrigeration-maytag-01.webp",
+    "alt": "",
+    "brand": "maytag"
+   },
+   {
+    "file": "bg-laundry-speed-queen-01.webp",
+    "alt": "",
+    "brand": "speed-queen"
+   },
+   {
+    "file": "bg-dishwasher-whirlpool-01.webp",
+    "alt": "",
+    "brand": "whirlpool"
+   },
+   {
+    "file": "bg-laundry-bosch-02.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-range-fisher-paykel-02.webp",
+    "alt": "",
+    "brand": "fisher-paykel"
+   },
+   {
+    "file": "bg-range-frigidaire-02.webp",
+    "alt": "",
+    "brand": "frigidaire"
+   },
+   {
+    "file": "bg-range-ge-02.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-dishwasher-kenmore-02.webp",
+    "alt": "",
+    "brand": "kenmore"
+   },
+   {
+    "file": "bg-dishwasher-kitchenaid-02.webp",
+    "alt": "",
+    "brand": "kitchenaid"
+   },
+   {
+    "file": "bg-laundry-lg-02.webp",
+    "alt": "",
+    "brand": "lg"
+   },
+   {
+    "file": "bg-laundry-maytag-02.webp",
+    "alt": "",
+    "brand": "maytag"
+   },
+   {
+    "file": "bg-laundry-speed-queen-02.webp",
+    "alt": "",
+    "brand": "speed-queen"
+   },
+   {
+    "file": "bg-laundry-whirlpool-02.webp",
+    "alt": "",
+    "brand": "whirlpool"
+   },
+   {
+    "file": "bg-dishwasher-bosch-03.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-range-frigidaire-03.webp",
+    "alt": "",
+    "brand": "frigidaire"
+   },
+   {
+    "file": "bg-dishwasher-ge-03.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-refrigeration-kenmore-03.webp",
+    "alt": "",
+    "brand": "kenmore"
+   },
+   {
+    "file": "bg-refrigeration-kitchenaid-03.webp",
+    "alt": "",
+    "brand": "kitchenaid"
+   },
+   {
+    "file": "bg-laundry-lg-03.webp",
+    "alt": "",
+    "brand": "lg"
+   },
+   {
+    "file": "bg-laundry-maytag-03.webp",
+    "alt": "",
+    "brand": "maytag"
+   },
+   {
+    "file": "bg-laundry-speed-queen-03.webp",
+    "alt": "",
+    "brand": "speed-queen"
+   },
+   {
+    "file": "bg-refrigeration-whirlpool-03.webp",
+    "alt": "",
+    "brand": "whirlpool"
+   },
+   {
+    "file": "bg-range-bosch-04.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-range-frigidaire-04.webp",
+    "alt": "",
+    "brand": "frigidaire"
+   },
+   {
+    "file": "bg-laundry-ge-04.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-range-kenmore-04.webp",
+    "alt": "",
+    "brand": "kenmore"
+   },
+   {
+    "file": "bg-refrigeration-kitchenaid-04.webp",
+    "alt": "",
+    "brand": "kitchenaid"
+   },
+   {
+    "file": "bg-laundry-lg-04.webp",
+    "alt": "",
+    "brand": "lg"
+   },
+   {
+    "file": "bg-refrigeration-bosch-05.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-microwave-ge-05.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-range-bosch-06.webp",
+    "alt": "",
+    "brand": "bosch"
+   },
+   {
+    "file": "bg-hood-ge-06.webp",
+    "alt": "",
+    "brand": "ge"
+   },
+   {
+    "file": "bg-range-ge-07.webp",
+    "alt": "",
+    "brand": "ge"
+   }
+  ],
+  "rows": 3,
+  "speedPxPerSec": 10,
+  "gap": 4
+ },
+ "logoFolder": "assets/logos/"
 }

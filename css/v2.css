@@ -1,0 +1,172 @@
+/* v2 leaderboard (design/design-spec-v2.md). Loaded after kiosk.css; Build folds these into kiosk.css/tokens.css. */
+:root{
+  --scr-safe:16px;
+  --v2-top-h:52px;            /* the one header bar */
+  --v2-gap-top:10px;          /* header -> panel */
+  --v2-gap-bot:6px;           /* panel -> footer */
+  --v2-foot-h:36px;
+  --v2-row-h:80px;--v2-row-gap:6px;--v2-bar-h:40px;
+  --v2-panel-pad:12px;--v2-head-h:52px;--v2-head-gap:8px;
+  --v2-points-col:112px;--v2-rank-col:40px;
+  /* photo wall + scrim (spec §7) */
+  --v2-scrim:rgba(23,25,27,.80);      /* tint #17191B @ 80% over the photos */
+  --v2-plate:rgba(23,25,27,.55);      /* each row's plate, on top of the scrim */
+  --v2-plate-press:rgba(242,241,237,.10);
+  --v2-panel-r:24px;
+}
+.layer{gap:0}
+#base{background:var(--scr-frame)}
+#base:has(.gpanel){background:transparent}
+body{background:var(--scr-frame)}
+#bgwall{position:absolute;z-index:0;border-radius:var(--v2-panel-r);overflow:hidden;background:#17191B;contain:strict;pointer-events:none}
+#bgwall .tiles{position:absolute;inset:0}
+#bgwall .wrow{position:absolute;left:0;right:0}
+#bgwall .wrow img{position:absolute;left:0;top:0;object-fit:cover;border-radius:6px;will-change:transform;backface-visibility:hidden}
+#bgwall .solo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#bgwall .wscrim{position:absolute;inset:0;background:var(--v2-scrim)}
+#base{z-index:1}
+#base:has(.gpanel)::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none}
+
+/* ---------- top bar: wordmark (= Home) | category segmented control | How we rank ---------- */
+.topbar{flex:none;height:var(--v2-top-h);display:flex;align-items:center;gap:14px;margin-bottom:var(--v2-gap-top)}
+.wmbtn{flex:none;height:52px;display:flex;align-items:center;padding:0 4px 0 0;border-radius:12px}
+.wmbtn .wm{width:206px;height:auto;display:block}
+.topbar .tabs-wrap{flex:1;min-width:0;display:flex;justify-content:center}
+.tabs.seg{gap:2px;padding:3px;border-radius:999px;background:rgba(242,241,237,.06);box-shadow:inset 0 0 0 1.5px var(--scr-frame-control-line);max-width:100%}
+.seg .tab{height:44px;padding:0 15px;border:0;font:600 17px/1 var(--scr-font-sans);color:var(--scr-frame-text-2)}
+.seg .tab[aria-selected="true"]{background:var(--scr-accent);color:var(--scr-on-accent)}
+.btn.slim{height:44px;padding:0 16px 0 12px;font-size:17px;border-width:1.5px;gap:7px}
+.btn.slim svg{width:20px;height:20px}
+.tabs-wrap.more::after{right:0;width:56px;border-radius:0 999px 999px 0}
+
+/* ---------- graph panel ---------- */
+.gpanel{flex:1;min-height:0;position:relative;display:flex;flex-direction:column;padding:var(--v2-panel-pad) var(--v2-panel-pad) 0;border-radius:var(--v2-panel-r);
+  box-shadow:inset 0 0 0 1px rgba(242,241,237,.10);color:var(--scr-frame-text)}
+.ghead{flex:none;height:var(--v2-head-h);display:flex;align-items:center;gap:12px;padding:0 4px 0 12px;margin-bottom:var(--v2-head-gap)}
+.gt{flex:1;min-width:0}
+.gt h1{font:600 28px/30px var(--scr-font-serif);color:var(--scr-frame-text);white-space:nowrap}
+.gsub{font:400 16px/20px var(--scr-font-sans);color:var(--scr-frame-text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.sbadge{flex:none;height:28px;padding:0 10px;display:inline-flex;align-items:center;border-radius:8px;border:1.5px solid var(--scr-frame-text-2);
+  font:750 16px/1 var(--scr-font-sans);letter-spacing:.12em;color:var(--scr-frame-text)}
+.sortbtn{flex:none;height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 12px 0 16px;border-radius:999px;border:1.5px solid var(--scr-frame-control-line);
+  color:var(--scr-frame-text);font:600 17px/1 var(--scr-font-sans);background:rgba(23,25,27,.5)}
+.sortbtn .k{color:var(--scr-frame-text-2);font-weight:500}
+.sortbtn svg{width:18px;height:18px}
+.sortbtn.on{background:var(--scr-accent);border-color:var(--scr-accent);color:var(--scr-on-accent)}
+.sortbtn.on .k{color:var(--scr-on-accent)}   /* no opacity: 4.59:1 on jade (QA v2 Fix 2) */
+.menuscrim{position:absolute;inset:0;z-index:5;background:transparent;border-radius:var(--v2-panel-r)}
+.sortmenu{position:absolute;z-index:6;top:calc(var(--v2-panel-pad) + 50px);right:16px;width:320px;padding:6px;border-radius:18px;background:var(--scr-card);color:var(--scr-card-text);box-shadow:var(--scr-card-shadow)}
+.sortmenu button{width:100%;height:50px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 14px;border-radius:12px;font:600 18px/1 var(--scr-font-sans);color:var(--scr-card-text)}
+.sortmenu button small{font:500 16px/1 var(--scr-font-sans);color:var(--scr-card-text-2)}
+.sortmenu button[aria-checked="true"]{background:var(--scr-accent);color:var(--scr-on-accent)}
+.sortmenu button[aria-checked="true"] small{color:var(--scr-on-accent)}
+
+.gpanel .scroller{padding:0 0 16px}
+/* 28px bottom fade only while more rows sit below (JS toggles .more), so a short list's last row is never faded */
+.gpanel .scroller.more{-webkit-mask-image:linear-gradient(#000 calc(100% - 28px),transparent);mask-image:linear-gradient(#000 calc(100% - 28px),transparent)}
+.gpanel .rows{gap:var(--v2-row-gap);padding:0}
+.gpanel .lb-row{height:var(--v2-row-h);grid-template-columns:var(--v2-rank-col) var(--scr-logo-tile) minmax(0,1fr) var(--v2-points-col);column-gap:14px;
+  background:var(--v2-plate);color:var(--scr-frame-text);padding:0 18px 0 10px}
+.gpanel .lb-row:active,.gpanel .lb-row.is-pressed,.gpanel .lb-row.is-selected{background:var(--v2-plate-press)}
+.gpanel .lb-row:focus-visible{box-shadow:var(--scr-focus-ring-frame)}
+.gpanel .rank{color:var(--scr-frame-text);font-size:28px}
+.gpanel .tile{border:1.5px solid rgba(242,241,237,.18)}
+.gpanel .barcol{gap:6px;justify-content:center}
+.nameline{display:flex!important;align-items:baseline;gap:12px;min-width:0;height:24px}
+.gpanel .bname{font:650 21px/24px var(--scr-font-sans);color:var(--scr-frame-text);flex:none;max-width:60%}
+.gpanel .meta{font:500 16px/20px var(--scr-font-sans);color:var(--scr-frame-text-2);gap:7px;min-width:0}
+.gpanel .meta .dot{opacity:.6}
+.nai{color:var(--scr-frame-text)}
+.gpanel .bar-wrap{height:var(--v2-bar-h)}
+.gpanel .lb-bar{border-radius:calc(var(--v2-bar-h) / 2);min-width:var(--v2-bar-h);box-shadow:inset 0 0 0 var(--scr-bar-outline-width) var(--scr-bar-outline-dark)}
+.gpanel .lb-na{height:var(--v2-bar-h);border-radius:calc(var(--v2-bar-h) / 2);box-shadow:inset 0 0 0 var(--scr-bar-outline-width) var(--scr-bar-outline-dark);
+  background:repeating-linear-gradient(135deg,var(--scr-neutral-strong) 0 2.5px,transparent 2.5px 9px)}
+.gpanel .na-line{height:var(--v2-bar-h)}
+.gpanel .na-line .why{color:var(--scr-frame-text-2)}
+.gpanel .lb-points{color:var(--scr-frame-text)}
+.gpanel .lb-points .d,.gpanel .lb-points .tot,.gpanel .lb-points .nav{color:var(--scr-frame-text-2)}
+.gpanel .lb-points .n{font-size:40px}
+.lb-row.pend{opacity:.85}
+.nyr-h{padding:14px 12px 8px;font:700 16px/20px var(--scr-font-sans);letter-spacing:.08em;text-transform:uppercase;color:var(--scr-frame-text-2)}
+.gpanel .empty{color:var(--scr-frame-text)}
+
+/* ---------- Most Popular: one 60px strip at the top of the list (scrolls away with it) ---------- */
+.popular.v2{flex-direction:row;align-items:center;gap:14px;margin:0 0 var(--v2-row-gap);padding:6px 10px 6px 14px;height:64px;border:0;border-radius:16px;background:var(--v2-plate)}
+.popular.v2 .phead{font:750 16px/18px var(--scr-font-sans);letter-spacing:.08em;color:var(--scr-frame-text-2);flex:none;width:88px}
+.popular.v2 .picks-row{flex:1;min-width:0;position:relative}
+.popular.v2 .picks{gap:8px;padding:4px;margin:-4px}
+.popular.v2 .pick{min-height:52px;max-width:none;padding:4px 14px 4px 4px;gap:10px;border:1.5px solid rgba(242,241,237,.16);background:rgba(242,241,237,.05);color:var(--scr-frame-text);border-radius:12px}
+.popular.v2 .pimg{width:44px;height:44px;border:0;background:rgba(242,241,237,.10);color:var(--scr-frame-text-2)}
+.popular.v2 .ptext{display:block;white-space:nowrap;font:500 17px/22px var(--scr-font-sans)}
+.popular.v2 .ptext b{font-weight:650}
+.popular.v2 .ptext .num{font-weight:700}
+.popular.v2 .pn{display:block;font:400 16px/20px var(--scr-font-sans);color:var(--scr-frame-text-2)}
+.popular.v2 .picks-row::after{content:"";position:absolute;right:-4px;top:-4px;bottom:-4px;width:48px;background:linear-gradient(90deg,rgba(40,43,46,0),rgba(40,43,46,.95));pointer-events:none}
+
+/* ---------- footer: one quiet line ---------- */
+.footer.v2{flex:none;height:var(--v2-foot-h);margin-top:var(--v2-gap-bot);flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:0 12px;
+  font:400 16px/20px var(--scr-font-sans);color:var(--scr-frame-text-2);white-space:nowrap}
+.footer.v2 b{font-weight:600;color:var(--scr-frame-text-2)}
+.footer.v2 .dot{margin:0 8px;opacity:.6}
+.footer.v2 .fl{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.flink{flex:none;height:44px;margin:-4px 0;padding:0 4px 0 12px;font:600 16px/1 var(--scr-font-sans);color:var(--scr-frame-text);border-radius:10px}
+
+/* ---------- placeholder tokens: quiet inline, dotted underline (no dashed boxes) ---------- */
+.ph,.footer .ph,.sh .ph,.layer > .ph{display:inline;padding:0;border:0;border-radius:0;background:none;font:inherit;font-style:italic;color:var(--scr-card-text-2);
+  text-decoration:underline dotted 1.5px;text-underline-offset:4px;text-decoration-color:var(--scr-neutral-strong)}
+.ph.block{display:block;padding:0;margin-top:6px}
+
+/* ---------- 1024 x 768 ---------- */
+@media (max-width:1120px){
+  :root{--v2-row-h:74px;--v2-bar-h:36px;--v2-points-col:100px;--v2-rank-col:34px}
+  .wmbtn .wm{width:176px}
+  .topbar{gap:10px}
+  .seg .tab{padding:0 11px;font-size:16px}
+  .btn.slim{padding:0 14px 0 10px;font-size:16px}
+  .gpanel .lb-row{column-gap:12px;padding:0 14px 0 8px}
+  .gpanel .rank{font-size:26px}
+  .gpanel .lb-points .n{font-size:36px}
+  .gpanel .bname{font-size:20px}
+  .gt h1{font-size:26px}
+  .popular.v2 .ptext{font-size:16px}
+}
+/* ---------- 1366 x 1024 (12.9") ---------- */
+@media (min-width:1300px) and (min-height:980px){
+  :root{--scr-safe:20px;--v2-top-h:60px;--v2-row-h:90px;--v2-row-gap:8px;--v2-bar-h:46px;--v2-points-col:124px;--v2-head-h:60px;--v2-rank-col:44px;--v2-foot-h:40px}
+  .wmbtn{height:60px}.wmbtn .wm{width:236px}
+  .seg .tab{height:50px;padding:0 18px;font-size:18px}
+  .btn.slim{height:50px;font-size:18px}
+  .gt h1{font-size:32px;line-height:36px}
+  .gpanel .bname{font-size:23px;line-height:26px}
+  .nameline{height:26px}
+  .gpanel .lb-points .n{font-size:44px}
+  .gpanel .rank{font-size:30px}
+}
+@media (prefers-reduced-motion:reduce){ #bgwall .wrow img{will-change:auto} }
+.sortmenu{width:404px}
+.sortmenu button span{min-width:0;text-align:left}
+.sortmenu button small{flex:none;white-space:nowrap}
+@media (max-width:1120px){ .gsub .hlp{display:none} .flink .long{display:none} }
+.gsub.tight .hlp{display:none}
+
+/* ---------- official logos (CLIENT.md 2026-11-02 5:09 PM) ---------- */
+/* Logos sit on a light #FAF8F4 plate on the dark rows, so every official full-colour / dark logo reads without recolouring. */
+.rlogo{display:block;max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain}
+.tile.real{border:0;padding:6px 8px}
+.gpanel .tile.real{width:var(--v2-logo-w);height:56px;border:0;border-radius:12px}
+:root{--v2-logo-w:112px}
+.gpanel .lb-row{grid-template-columns:var(--v2-rank-col) var(--v2-logo-w) minmax(0,1fr) var(--v2-points-col)}
+.hero .top.real{flex-direction:column;align-items:flex-start;gap:14px}
+.bigtile.real{width:100%;height:88px;border:1.5px solid var(--scr-card-line);border-radius:16px;padding:14px 22px;background:#fff}
+.takeover .biglogo.real .rlogo{width:min(64vw,760px);max-height:34vh}
+@media (max-width:1120px){ :root{--v2-logo-w:100px} }
+@media (min-width:1300px) and (min-height:980px){ :root{--v2-logo-w:128px} .gpanel .tile.real{height:64px} }
+
+/* ---------- slim title bar for How we rank, About and the brand view (same 52px as the leaderboard top bar) ---------- */
+.titlebar.v2{height:var(--v2-top-h);gap:10px}
+.titlebar.v2 .wm{width:206px}
+.titlebar.v2 .btn.slim{height:44px;padding:0 18px;font-size:17px;border-width:1.5px}
+#base:not(:has(.gpanel)),.layer.bvl{gap:10px}
+@media (max-width:1120px){ .titlebar.v2 .wm{width:176px} .titlebar.v2 .btn.slim{padding:0 14px;font-size:16px} }
+@media (min-width:1300px) and (min-height:980px){ .titlebar.v2 .wm{width:236px} .titlebar.v2 .btn.slim{height:50px;font-size:18px} }
+.hsh .ph,.footer .ph,.pager .ph{color:var(--scr-frame-text-2)}

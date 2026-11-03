@@ -4,7 +4,10 @@
 (function () {
 'use strict';
 const Q = new URLSearchParams(location.search);
-const TS = Math.max(0.01, parseFloat(Q.get('slowmo') || '1'));          // dev only: ?slowmo=20 slows every motion 20x
+// Mockup/test-only URL params (?tab= &sort= &menu=1 ?only= ?stress= ?wallt= ?still=1 ?noshuffle=1) work only on a local preview host, never on the kiosk.
+const DEV = /^(127\.0\.0\.1|localhost|\[::1\])$/.test(location.hostname);
+const QD = k => DEV ? Q.get(k) : null;
+const TS = Math.max(0.01, parseFloat(QD('slowmo') || '1'));          // dev only: ?slowmo=20 slows every motion 20x
 const RM = window.matchMedia('(prefers-reduced-motion: reduce)');
 const reduced = () => RM.matches;
 const app = document.getElementById('app'), sr = document.getElementById('sr');
@@ -22,7 +25,7 @@ const T = {
   popSub: 'Picked by our team from what sells and what customers tell us.',
   popSample: "<b>SAMPLE PICKS.</b> These show how our team's picks will look. Real picks are coming soon."
 };
-const ph = (t, cls = '') => `<span class="ph ${cls}">[PLACEHOLDER: ${t}]</span>`;
+const ph = (t, cls = '') => `<span class="ph ${cls}" data-ph="${esc(t)}">Pending: ${t}</span>`;   // v2: quiet inline token (dotted underline), not a dashed box
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 /* ---------- icons (line icons, currentColor) ---------- */
@@ -89,7 +92,9 @@ const ctxLower = cat => cat === 'overall' ? 'across all categories' : catById(ca
 /* ---------- placeholder logos: brand-name text in the brand color (real logos pending permission) ---------- */
 function lum(hex) { const c = hex.replace('#', '').match(/../g).map(h => { const v = parseInt(h, 16) / 255; return v <= .04045 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
 const contrastOnCard = hex => (lum('#FAF8F4') + .05) / (lum(hex) + .05);
+const realLogo = b => b.logo && b.logo.file ? `<img class="rlogo" src="${esc((D.logoFolder || 'assets/logos/') + b.logo.file)}" alt="" draggable="false" decoding="async">` : '';
 function phLogo(b, boxW, maxPx) {
+  if (b.logo && b.logo.file) return realLogo(b);   // v2: official logo (CLIENT.md 2026-11-02 5:09 PM: logo permission resolved)
   const text = (b.logo && b.logo.text) || b.name, col = (b.logo && b.logo.color) || b.chartColor;
   const words = text.split(/\s+/), longest = Math.max(...words.map(w => w.length));
   const lines = words.length > 1 ? 2 : 1;
@@ -97,7 +102,7 @@ function phLogo(b, boxW, maxPx) {
   const size = Math.max(8, Math.min(maxPx, boxW / (perLine * 0.6)));
   return `<span class="ph-logo ${contrastOnCard(col) < 3 ? 'lowc' : ''}" style="--logo-color:${esc(col)};font-size:${size.toFixed(1)}px">${esc(text)}</span>`;
 }
-const tile = b => `<span class="tile" aria-hidden="true">${phLogo(b, 48, 16)}</span>`;
+const tile = b => `<span class="tile ${b.logo && b.logo.file ? 'real' : ''}" aria-hidden="true">${phLogo(b, 48, 16)}</span>`;
 
 /* ---------- state ---------- */
 const S = {
@@ -112,34 +117,24 @@ const tabs = () => [{id: 'overall', navLabel: 'Overall', icon: 'overall'}].conca
 
 /* ---------- components ---------- */
 function titlebar(kind) {
-  const wm = `<img class="wm" src="assets/scr-wordmark-line-frame.svg" alt="Stasukelis Consumer Reports" draggable="false">`;
+  const wm = `<img class="wm" src="assets/scr-wordmark-stacked-frame.svg" alt="Stasukelis Consumer Reports" draggable="false">`;   // v2: same stacked wordmark as the leaderboard top bar
   if (kind === 'brand') {
     const c = ctxLabel(S.bv.ctx);
-    return `<header class="titlebar"><button class="btn" data-act="back" aria-label="Back">‹ Back</button>${wm}<div class="spacer"></div>
-      <button class="btn" data-act="home">Home</button><button class="btn" data-act="close" aria-label="Close and return to the ${esc(c)} leaderboard.">${I.close}Close</button></header>`;
+    return `<header class="titlebar v2"><button class="btn slim" data-act="back" aria-label="Back">‹ Back</button>${wm}<div class="spacer"></div>
+      <button class="btn slim" data-act="home">Home</button><button class="btn slim" data-act="close" aria-label="Close and return to the ${esc(c)} leaderboard.">${I.close}Close</button></header>`;
   }
-  const back = kind === 'how' || kind === 'about' ? `<button class="btn" data-act="back" aria-label="Back">‹ Back</button>` : '';
+  const back = kind === 'how' || kind === 'about' ? `<button class="btn slim" data-act="back" aria-label="Back">‹ Back</button>` : '';
   const cur = kind === 'how' ? 'How we rank' : kind === 'about' ? 'About' : (S.tab === 'overall' ? 'Home' : null);
   const nav = [['Home', 'home'], ['How we rank', 'how'], ['About', 'about']]
-    .map(([l, a]) => `<button class="btn" data-act="${a}" ${l === cur ? 'aria-current="page"' : ''}>${l}</button>`).join('');
-  return `<header class="titlebar">${back}${wm}<div class="spacer"></div>${nav}</header>`;
-}
-function tabRow() {
-  const t = tabs();
-  return `<nav class="tabs-wrap" aria-label="Categories"><div class="tabs" role="tablist">${t.map((c, i) =>
-    `<button class="tab" role="tab" id="tab-${esc(c.id)}" data-tab="${esc(c.id)}" aria-selected="${c.id === S.tab}" aria-controls="list" tabindex="${c.id === S.tab ? 0 : -1}"
-      aria-label="${esc(c.navLabel)}, tab, ${i + 1} of ${t.length}.">${icon(c.icon)}${esc(c.navLabel)}</button>`).join('')}</div></nav>`;
-}
-function chipRow() {
-  const s = sortOf(S.tab);
-  const items = [{id: 'total', label: 'Total'}].concat(D.sections.map(x => ({id: x.id, label: x.label})));
-  return `<div class="chips-wrap"><div class="chips" role="group" aria-label="Sort by"><span class="lbl" aria-hidden="true">Sort by</span>${items.map(x =>
-    `<button class="chip" data-sort="${esc(x.id)}" aria-pressed="${x.id === s}" aria-label="Sort by ${esc(x.label)}.">${esc(x.label)}</button>`).join('')}</div></div>`;
+    .map(([l, a]) => `<button class="btn slim" data-act="${a}" ${l === cur ? 'aria-current="page"' : ''}>${l}</button>`).join('');
+  return `<header class="titlebar v2">${back}${wm}<div class="spacer"></div>${nav}</header>`;
 }
 const rankHtml = r => r.rank == null ? '–' : (r.tie ? `${r.rank}<small>=</small>` : `${r.rank}`);
 function rowLabel(r, cat, sort) {
   const L = cat === 'overall' ? 'Overall' : catById(cat).label;
-  let s = `${L}, ${r.tie ? 'tied for rank' : 'rank'} ${r.rank == null ? 'none' : r.rank}, ${r.brand.name}, `;
+  // label-in-name (QA v2 Fix 5): start with the visible text: name, then the "55/60 pts" line, then the big number
+  const big = sort !== 'total' ? (r.key == null ? 'N/A' : `${r.key}/10`) : `${r.score}/100`;
+  let s = `${r.brand.name}, ${r.e}/${r.p} pts, ${big}. ${L}, ${r.tie ? 'tied for rank' : 'rank'} ${r.rank == null ? 'none' : r.rank}, `;
   if (sort !== 'total') { s += r.key == null ? `${sectionById(sort).label} not applicable, ` : `${sectionById(sort).label} ${r.key} out of 10, `; }
   s += `${r.score} out of 100, ${r.e} of ${r.p} points`;
   if (cat === 'overall') s += `, rated in ${r.n} ${r.n === 1 ? 'category' : 'categories'}`;
@@ -149,12 +144,37 @@ function rowLabel(r, cat, sort) {
   if (D.sample) s += ' ' + T.sampleVO;
   return s;
 }
+
+/* ---------- Most Popular (CLIENT.md): staff-picked models per category; hidden when a category has none ---------- */
+/* ---------- v2 leaderboard (design/design-spec-v2.md): one slim top bar, dark graph panel over the photo wall ---------- */
+const shortTab = c => c.id === 'overall' ? 'Overall' : String(c.navLabel || c.label).replace(/^By\s+/i, '');
+function topbar() {
+  const t = tabs();
+  return `<header class="topbar">
+    <button class="wmbtn" data-act="home" aria-label="Stasukelis Consumer Reports. Home."><img class="wm" src="assets/scr-wordmark-stacked-frame.svg" alt="" draggable="false"></button>
+    <nav class="tabs-wrap" aria-label="Categories"><div class="tabs seg" role="tablist">${t.map((c, i) =>
+      `<button class="tab" role="tab" id="tab-${esc(c.id)}" data-tab="${esc(c.id)}" aria-selected="${c.id === S.tab}" aria-controls="list" tabindex="${c.id === S.tab ? 0 : -1}"
+        aria-label="${esc(c.navLabel)}, tab, ${i + 1} of ${t.length}.">${esc(shortTab(c))}</button>`).join('')}</div></nav>
+    <button class="btn slim" data-act="how"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>How we rank</button></header>`;
+}
+function sortItems() { return [{id: 'total', label: 'Total score'}].concat(D.sections.map(x => ({id: x.id, label: x.label, short: x.short || x.label}))); }
+function sortControl() {
+  const s = sortOf(S.tab), cur = sortItems().find(x => x.id === s);
+  return `<button class="sortbtn ${s !== 'total' ? 'on' : ''}" data-act="sortmenu" aria-haspopup="menu" aria-expanded="${!!S.sortOpen}" aria-label="Sort ${esc(cur.short || cur.label)}${cur.short && cur.short !== cur.label ? ', ' + esc(cur.label) : ''}. Double-tap to change.">
+    <span class="k">Sort</span><span class="v">${esc(cur.short || cur.label)}</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>`;
+}
+function sortMenu() {
+  if (!S.sortOpen) return '';
+  const s = sortOf(S.tab);
+  return `<button class="menuscrim" data-act="sortclose" aria-label="Close the sort menu." tabindex="-1"></button><div class="sortmenu" role="menu" aria-label="Sort by">${sortItems().map(x =>
+    `<button role="menuitemradio" aria-checked="${x.id === s}" data-sort="${esc(x.id)}"><span>${esc(x.label)}</span>${x.id === 'total' ? '<small>out of 100</small>' : '<small>out of 10</small>'}</button>`).join('')}</div>`;
+}
+const sampleBadge = () => D.sample ? `<span class="sbadge" role="note" aria-label="${esc(T.sampleBanner.replace(/<[^>]+>/g, ''))}">SAMPLE</span>` : '';
 function row(r, cat, i, sort) {
   const b = r.brand, col = esc(b.chartColor);
-  const meta = [`<span class="num">${r.e} / ${r.p} pts</span>`];
-  if (cat === 'overall') meta.push(`<span class="dot">·</span><span>Rated in ${r.n} ${r.n === 1 ? 'category' : 'categories'}</span>`);
-  if (cat !== 'overall' && r.na) meta.push(`<span class="tag na">N/A: Rebate</span>`);
-  const sample = D.sample ? `<span class="tag">SAMPLE</span>` : '';
+  const meta = [`<span class="num">${r.e}/${r.p} pts</span>`];
+  if (cat === 'overall') meta.push(`<span>${r.n} ${r.n === 1 ? 'category' : 'categories'}</span>`);
+  if (cat !== 'overall' && r.na && sort === 'total') meta.push(`<span class="nai">Rebate N/A</span>`);
   let barHtml, pts;
   if (sort === 'total') {
     barHtml = `<span class="bar-wrap"><span class="lb-bar" style="--score:${r.score};--bar-color:${col};--i:${i}"></span></span>`;
@@ -168,24 +188,20 @@ function row(r, cat, i, sort) {
   }
   return `<button class="lb-row ${S.selected === b.id ? 'is-selected' : ''}" data-brand="${esc(b.id)}" aria-label="${esc(rowLabel(r, cat, sort))}">
     <span class="rank" aria-hidden="true">${rankHtml(r)}</span>${tile(b)}
-    <span class="namecol" aria-hidden="true"><span class="bname">${esc(b.name)}</span>${sample}</span>
-    <span class="barcol" aria-hidden="true">${barHtml}<span class="meta">${meta.join('')}</span></span>
+    <span class="barcol" aria-hidden="true"><span class="nameline"><span class="bname">${esc(b.name)}</span><span class="meta">${meta.join('<span class="dot">·</span>')}</span></span>${barHtml}</span>
     <span class="lb-points" aria-hidden="true">${pts}</span></button>`;
 }
 function pendingRow(r, cat) {
   const b = r.brand;
-  return `<button class="lb-row" data-brand="${esc(b.id)}" aria-label="${esc(b.name)}, not yet rated in ${esc(catById(cat).label.toLowerCase())}.">
+  return `<button class="lb-row pend" data-brand="${esc(b.id)}" aria-label="${esc(b.name)}, not yet rated in ${esc(catById(cat).label.toLowerCase())}.">
     <span class="rank" aria-hidden="true">–</span>${tile(b)}
-    <span class="namecol" aria-hidden="true"><span class="bname">${esc(b.name)}</span></span>
-    <span class="barcol" aria-hidden="true"><span class="na-line"><span class="lb-na"></span><span class="why">Not yet rated</span></span></span>
-    <span class="lb-points" aria-hidden="true"><span class="nav">N/A</span></span></button>`;
+    <span class="barcol" aria-hidden="true"><span class="nameline"><span class="bname">${esc(b.name)}</span><span class="meta"><span>Not yet rated</span></span></span><span class="na-line"><span class="lb-na"></span></span></span>
+    <span class="lb-points" aria-hidden="true"><span class="nav">–</span></span></button>`;
 }
 function footer() {
-  return `<footer class="footer"><div><strong>Data through ${esc(D.dataThrough)}</strong> · ${T.disclosure}</div>
-    <div>${T.disclaimerShort} ${ph("John's sign-off on the disclosure line")}</div></footer>`;
+  return `<footer class="footer v2"><span class="fl"><b>Data through ${esc(D.dataThrough)}</b><span class="dot">·</span>${T.disclaimerShort}</span>
+    <button class="flink" data-act="about" aria-label="About this guide.">About<span class="long"> this guide</span> ›</button></footer>`;
 }
-
-/* ---------- Most Popular (CLIENT.md): staff-picked models per category; hidden when a category has none ---------- */
 function picksFor(cat) {
   const mp = D.mostPopular, list = mp && mp.picks && mp.picks[cat];
   return Array.isArray(list) ? list.filter(p => p && brandById(p.brand) && brandById(p.brand).categories.includes(cat)) : [];
@@ -195,44 +211,111 @@ function mostPopular(cat) {
   const c = catById(cat);
   const cards = picks.map((p, i) => {
     const b = brandById(p.brand);
-    const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" decoding="async" draggable="false">`
-                        : `<span class="pimg-ph">${icon(c.icon)}</span>`;
-    const label = `Most Popular pick: ${b.name} ${p.model}, ${p.name}.${p.note ? ' ' + p.note : ''} Double-tap to see ${b.name}.${D.sample ? ' Sample pick, not a real one.' : ''}`;
-    return `<button class="pick" data-pick="${i}" data-brand="${esc(b.id)}" aria-label="${esc(label)}">
-      <span class="pimg" aria-hidden="true">${img}</span>
-      <span class="ptext" aria-hidden="true"><span class="pb">${esc(b.name)}${D.sample ? ' <span class="tag">SAMPLE</span>' : ''}</span>
-        <span class="pm"><b class="num">${esc(p.model)}</b> · ${esc(p.name)}</span>${p.note ? `<span class="pnote">${esc(p.note)}</span>` : ''}</span></button>`;
+    const img = p.image ? `<img src="${esc(p.image)}" alt="" loading="lazy" decoding="async" draggable="false">` : `<span class="pimg-ph">${icon(c.icon)}</span>`;
+    const label = `${b.name} ${p.model}, ${p.name}. Most Popular pick.${p.note ? ' ' + p.note : ''} Double-tap to see ${b.name}.${D.sample ? ' Sample pick, not a real one.' : ''}`;   // starts with the visible text
+    return `<button class="pick" data-pick="${i}" data-brand="${esc(b.id)}" aria-label="${esc(label)}"><span class="pimg" aria-hidden="true">${img}</span>
+      <span class="ptext" aria-hidden="true"><b>${esc(b.name)}</b> <span class="num">${esc(p.model)}</span><span class="pn">${esc(p.name)}</span></span></button>`;
   }).join('');
-  return `<section class="popular" aria-label="Most Popular"><div class="pophead"><h2 class="phead">Most Popular</h2><p class="psub">${T.popSub}</p></div>
-    ${D.sample ? `<div class="pbanner">${T.popSample}</div>` : ''}<div class="picks-row"><div class="picks">${cards}</div></div></section>`;
+  return `<section class="popular v2" aria-label="Most Popular. ${esc(T.popSub)}${D.sample ? ' Sample picks.' : ''}"><h2 class="phead" aria-hidden="true">Most<br>Popular</h2>
+    <div class="picks-row"><div class="picks">${cards}</div></div></section>`;
 }
 
 /* ---------- screens ---------- */
 function leaderboardHTML() {
-  const cat = S.tab, sort = sortOf(cat), {rated, pending} = board(cat, sort);
-  let head;
-  if (cat === 'overall') head = `<h1 class="serif" id="list-h">Overall Ranking</h1><div class="sub">Every brand we've rated, all categories combined.</div><div class="helper">${T.helper}</div>`;
-  else {
-    const c = catById(cat), n = rated.length;
-    head = `<h1 class="serif" id="list-h">${esc(c.navLabel)}</h1><div class="sub">${esc(c.description)}${c.note ? `<span class="note">${esc(c.note)}</span>` : ''}</div>
-      <div class="helper"><span class="count">${n} ${n === 1 ? 'brand' : 'brands'} rated</span><br>${T.helper}</div>`;
-  }
-  const sortLine = sort !== 'total' ? `<div class="sortline">Sorted by ${esc(sectionById(sort).label)}. Scores out of 10. Total still shown.</div>` : '';
+  const cat = S.tab, sort = sortOf(cat);
+  let {rated, pending} = board(cat, sort);
+  if (QD('only')) { const keep = QD('only').split(','); rated = rated.filter(r => keep.includes(r.brand.id)); }   // mockup/stress-test only
+  const n = rated.length;
+  const title = cat === 'overall' ? 'Overall Ranking' : esc(catById(cat).navLabel);
+  const sub = cat === 'overall' ? `Every brand we've rated, all categories combined.<span class="hlp"> ${T.helper}</span>` : `${n} ${n === 1 ? 'brand' : 'brands'} rated · ${esc(catById(cat).description)}`;
   let body;
   if (!rated.length) {
     body = cat === 'overall' ? `<div class="empty"><b>No brands rated yet.</b> Our team is scoring brands now. Check back soon.</div>`
       : `<div class="empty"><b>No ${esc(catById(cat).label.toLowerCase())} scores yet.</b> Our team is still scoring. Check back soon.</div>`;
-  } else {
-    body = `<div class="rows grow ${reduced() ? 'fadein' : ''}" id="rows">${rated.map((r, i) => row(r, cat, i, sort)).join('')}</div>`;
-    if (cat !== 'overall' && rated.some(r => r.na)) body += `<div class="legend"><span class="lb-na" aria-hidden="true"></span><span>${T.naLegend}</span></div>`;
-  }
-  const nyr = cat !== 'overall' && pending.length ? `<div class="subhead-strip"><h3>Not yet rated</h3><p>We're still scoring these brands in ${esc(catById(cat).label.toLowerCase())}.</p></div>
-     <div class="rows">${pending.map(r => pendingRow(r, cat)).join('')}</div>` : '';
+  } else body = `<div class="rows grow ${reduced() ? 'fadein' : ''}" id="rows">${rated.map((r, i) => row(r, cat, i, sort)).join('')}</div>`;
+  const nyr = cat !== 'overall' && pending.length ? `<div class="nyr-h">Not yet rated in ${esc(catById(cat).label.toLowerCase())}</div><div class="rows">${pending.map(r => pendingRow(r, cat)).join('')}</div>` : '';
   const pop = cat === 'overall' ? '' : mostPopular(cat);
-  return `${titlebar('home')}${tabRow()}<section class="sh">${head}</section>
-    <main class="card list-card" id="list" role="tabpanel" aria-labelledby="tab-${esc(cat)}">${chipRow()}${sortLine}
-      ${D.sample ? `<div class="banner">${T.sampleBanner}</div>` : ''}
-      <div class="scroller" id="scroller">${pop}${body}${nyr}</div><div class="fade"></div></main>${footer()}`;
+  return `${topbar()}
+    <main class="gpanel" id="list" role="tabpanel" aria-labelledby="tab-${esc(cat)}">
+      <div class="ghead"><div class="gt"><h1 class="serif" id="list-h">${title}</h1><div class="gsub">${sub}</div></div>${sampleBadge()}${sortControl()}</div>
+      <div class="scroller" id="scroller">${pop}${body}${nyr}</div>${sortMenu()}</main>${footer()}`;
+}
+
+/* ---------- photo wall behind the graph panel (spec-v2 §7): capped, recycled tiles; transform-only drift ---------- */
+const WALL = {el: null, rows: [], raf: 0, last: 0, next: 0, key: '', list: null, k: 0, q: []};
+function wallList() {   // shuffled once per boot (spec-v2 §7.3); ?noshuffle=1 keeps data order for repeatable dev shots
+  if (WALL.list) return WALL.list;
+  const c = bgCfg(), l = (c.images || []).map(x => c.folder + (x.file || x)).filter(Boolean);
+  if (!QD('noshuffle')) for (let i = l.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [l[i], l[j]] = [l[j], l[i]]; }
+  return (WALL.list = l);
+}
+function preloadWall() {   // keep the next 3 photos decoded before a tile swaps to them
+  const l = wallList(); if (!l.length) return;
+  while (WALL.q.length < 3) {
+    const it = {src: l[(WALL.k++) % l.length], ok: false, bad: false}, im = new Image(); im.decoding = 'async'; im.src = it.src; WALL.q.push(it);
+    (im.decode ? im.decode() : Promise.resolve()).then(() => { it.ok = true; }, () => { it.bad = true; });
+  }
+}
+function nextWallSrc() {   // a decoded photo, or null (the tile keeps its current photo: never a half-loaded or broken image)
+  const it = WALL.q[0]; if (!it || !(it.ok || it.bad)) return null;
+  WALL.q.shift(); preloadWall(); return it.bad ? null : it.src;
+}
+function stopWall() { cancelAnimationFrame(WALL.raf); WALL.raf = 0; }
+function startWall() { if (WALL.raf || !WALL.rows.length || reduced() || QD('still')) return; WALL.last = performance.now(); WALL.raf = requestAnimationFrame(tick); }
+function bgCfg() { return Object.assign({enabled: true, folder: 'assets/bg/', images: [], rows: 3, speedPxPerSec: 10, gap: 10}, D.background || {}); }
+function placeWall() {
+  const w = document.getElementById('bgwall'), p = document.getElementById('list');
+  if (!w) return;
+  const show = p && S.screen === 'home' && !S.attract;
+  w.hidden = !show; if (!show) { stopWall(); return; }
+  const r = p.getBoundingClientRect();
+  Object.assign(w.style, {left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px'});
+  const key = `${Math.round(r.width)}x${Math.round(r.height)}`;
+  if (key !== WALL.key) { WALL.key = key; buildWall(r.width, r.height); } else startWall();
+}
+function buildWall(W, H) {
+  const c = bgCfg(), w = document.getElementById('bgwall'), imgs = wallList();
+  w.querySelector('.tiles').innerHTML = ''; WALL.rows = []; stopWall();
+  if (!c.enabled || !imgs.length) return;
+  const stress = QD('stress');
+  if (stress) { w.querySelector('.tiles').innerHTML = `<img class="solo" src="${esc(c.folder + stress)}" alt="">`; return; }
+  const n = c.rows, g = c.gap, th = (H - g * (n - 1)) / n, tw = Math.round(th * 4 / 3), per = Math.ceil(W / (tw + g)) + 1;
+  WALL.q = []; WALL.k = 0; const nextSrc = () => imgs[(WALL.k++) % imgs.length];   // first fill straight from the list
+  for (let ri = 0; ri < n; ri++) {
+    const rowEl = document.createElement('div'); rowEl.className = 'wrow'; rowEl.style.top = ri * (th + g) + 'px'; rowEl.style.height = th + 'px';
+    const tiles = [];
+    for (let i = 0; i < per; i++) {
+      const im = document.createElement('img'); im.alt = ''; im.decoding = 'async'; im.loading = 'lazy'; im.draggable = false; im.src = nextSrc();
+      // QA v2 Fix 1b: a photo that fails (e.g. offline, not cached) tries the next one; if none load, the tile hides and the scrim shows through.
+      let tries = 0; im.onerror = () => { if (++tries < imgs.length) im.src = nextSrc(); else im.style.visibility = 'hidden'; };
+      im.onload = () => { tries = 0; im.style.visibility = ''; };
+      im.style.width = tw + 'px'; im.style.height = th + 'px'; rowEl.appendChild(im); tiles.push({el: im, x: i * (tw + g)});
+    }
+    w.querySelector('.tiles').appendChild(rowEl);
+    WALL.rows.push({tiles, dir: ri % 2 ? 1 : -1, speed: c.speedPxPerSec * (1 + 0.15 * ri), span: per * (tw + g), tw, off: (ri * 0.37 % 1) * (tw + g)});
+  }
+  WALL.W = W; preloadWall();
+  const t0 = parseFloat(QD('wallt') || '0');  // mockups: advance the drift to a fixed time (s)
+  step(t0 * 1000, true);
+  startWall();   // Reduce Motion: tiles placed once, no loop (spec-v2 §7.4)
+}
+function step(dtMs, init) {
+  for (const r of WALL.rows) {
+    const d = init ? -r.off + r.dir * r.speed * dtMs / 1000 : r.dir * r.speed * dtMs / 1000;
+    for (const t of r.tiles) {
+      t.x += d;
+      let moved = false;
+      if (r.dir < 0) while (t.x < -r.tw) { t.x += r.span; moved = true; }      // left edge: recycle to the right, swap photo while off-screen
+      else while (t.x > WALL.W) { t.x -= r.span; moved = true; }
+      if (moved && !init) { const src = nextWallSrc(); if (src) t.el.src = src; }
+      t.el.style.transform = `translate3d(${t.x.toFixed(2)}px,0,0)`;
+    }
+  }
+}
+function tick(now) {
+  const dt = Math.min(100, now - WALL.last); WALL.last = now;
+  if (!document.hidden && !S.bv && !S.attract && S.screen === 'home') step(dt);
+  WALL.raf = requestAnimationFrame(tick);
 }
 
 function heroHTML() {
@@ -244,7 +327,7 @@ function heroHTML() {
   const math = nyr ? '' : mathLine(c);
   const vo = nyr ? `${b.name}. Ranked in ${ctxLabel(ctx)}. Not yet rated.` : `${b.name}. Ranked in ${ctxLabel(ctx)}. ${c.score} out of 100, ${c.e} of ${c.p} points. Scored ${D.scoredDate}.`;
   return `<section class="card hero" aria-label="${esc(vo)}">
-    <div class="top"><span class="bigtile" aria-hidden="true">${phLogo(b, 72, 26)}</span>
+    <div class="top ${b.logo && b.logo.file ? 'real' : ''}"><span class="bigtile ${b.logo && b.logo.file ? 'real' : ''}" aria-hidden="true">${phLogo(b, 72, 26)}</span>
       <div style="flex:1;min-width:0"><h1 class="serif">${esc(b.name)}</h1><div class="ctx">Ranked in: ${esc(ctxLabel(ctx))}</div></div></div>
     ${nyr ? `<div class="scoreline"><span class="nyr">Not yet rated</span></div>`
           : `<div><div class="scoreline"><span class="n">${c.score}</span><span class="d">/100</span></div><div class="under num">${c.e} of ${c.p} points</div></div><div class="mathbox">${math}</div>`}
@@ -288,7 +371,7 @@ function whyHTML(b, ctx) {
       <span class="na-line" aria-hidden="true"><span class="lb-na"></span><span class="why">N/A: no rebate offered</span></span><span class="sp" aria-hidden="true"><span class="nav">N/A</span></span></div>`;
     const open = S.bv.open === s.id;
     const ex = open ? `<span class="ex"><span class="m">${esc(s.means || '')}</span><span class="ev">${esc(s.evidence || '')} <span class="when">· Scored ${esc(s.scoredDate || D.scoredDate)}</span></span></span>` : '';
-    return `<button class="srow ${open ? 'open' : ''}" data-sec="${esc(s.id)}" aria-expanded="${open}" aria-label="${esc(s.label)}, ${s.score} out of 10. Double-tap for details.">
+    return `<button class="srow ${open ? 'open' : ''}" data-sec="${esc(s.id)}" aria-expanded="${open}" aria-label="${esc(s.label)}, ${s.score}/10. ${s.score} out of 10. Double-tap for details.">
       <span class="sl" aria-hidden="true">${esc(s.label)}</span><span class="bar-wrap" aria-hidden="true"><span class="lb-bar" style="--s:${s.score};--bar-color:${esc(b.chartColor)}"></span></span>
       <span class="sp" aria-hidden="true"><span class="n">${s.score}</span><span class="d">/10</span></span>${ex}</button>`;
   }).join('');
@@ -387,7 +470,7 @@ function aboutHTML() {
   const ask = sec('Ask us', "<p>Have a question about a brand? Ask anyone on our team. We're happy to help.</p>");
   return `${titlebar('about')}<main class="card about"><h1 class="serif">About this guide</h1>
     <p class="intro">Stasukelis Consumer Reports is our store's own guide to appliance brands. We built it to help answer a question shoppers ask: "Which brand would you buy?"</p>
-    <div class="cols"><div class="col">${why}${how}${ask}</div><div class="col">${store}${brands}</div></div><div class="legalline">${T.disclaimerFull}</div></main>`;
+    <div class="cols"><div class="col">${why}${how}${ask}</div><div class="col">${store}${brands}</div></div><div class="legalline">${T.disclosure} ${T.disclaimerFull} ${ph("John's sign-off on the disclosure line")}</div></main>`;
 }
 function attractHTML() {
   const top = board('overall', 'total').rated.slice(0, 3);
@@ -407,7 +490,7 @@ function attractHTML() {
 /* ---------- rendering ---------- */
 let base, bvl, ovl;
 function ensureLayers() {
-  app.innerHTML = '<div class="layer" id="base"></div><div class="layer bvl" id="bvl" hidden></div><div id="ovl"></div>';
+  app.innerHTML = '<div id="bgwall" aria-hidden="true" hidden><div class="tiles"></div><div class="wscrim"></div></div><div class="layer" id="base"></div><div class="layer bvl" id="bvl" hidden></div><div id="ovl"></div>';
   base = document.getElementById('base'); bvl = document.getElementById('bvl'); ovl = document.getElementById('ovl');
 }
 function saveScroll() { const sc = document.getElementById('scroller'); if (sc && S.screen === 'home') S.scroll[S.tab] = sc.scrollTop; }
@@ -422,11 +505,16 @@ function renderBase(opts = {}) {
     updateTabFade();
     const t = base.querySelector('.tab[aria-selected="true"]'); if (t && t.scrollIntoView && opts.tabIntoView) t.scrollIntoView({block: 'nearest', inline: 'nearest'});
   }
-  base.inert = !!S.bv || S.attract; updateFades(base);
+  base.inert = !!S.bv || S.attract; updateFades(base); fitHead(); placeWall();
+}
+/* panel subtitle is one line: if a long Sort label leaves too little room, drop the Overall helper sentence first (as at <=1120), never an ellipsis */
+function fitHead() {
+  const g = base.querySelector('.gsub'); if (!g) return;
+  g.classList.remove('tight'); if (g.scrollWidth > g.clientWidth + 1) g.classList.add('tight');
 }
 /* scroll cue on cards that scroll (How we rank, About, brand hero): .more shows the 40px bottom fade while content remains below */
 function updateFades(root = document) {
-  root.querySelectorAll('.hero,.hcard,.about').forEach(el => el.classList.toggle('more', el.scrollHeight - el.clientHeight - el.scrollTop > 2));
+  root.querySelectorAll('.hero,.hcard,.about,.gpanel .scroller').forEach(el => el.classList.toggle('more', el.scrollHeight - el.clientHeight - el.scrollTop > 2));
   // horizontal rows (brand-view category chips, Most Popular picks): right-edge fade on the wrapper while more sits to the right
   root.querySelectorAll('.other,.picks').forEach(o => o.parentElement.classList.toggle('more', o.scrollWidth - o.clientWidth - o.scrollLeft > 2));
 }
@@ -447,7 +535,7 @@ function takeoverEl(b) {
   const W = innerWidth, H = innerHeight;
   const el = document.createElement('div'); el.className = 'takeover'; el.setAttribute('aria-hidden', 'true');
   const size = Math.min(H * 0.3, (W * 0.72) / (Math.max(4, b.logo && b.logo.text ? b.logo.text.length : b.name.length) * 0.6));
-  el.innerHTML = `<div class="biglogo">${phLogo(b, W * 0.72, size)}<span class="lgph">LOGO PLACEHOLDER</span></div>`;
+  el.innerHTML = b.logo && b.logo.file ? `<div class="biglogo real">${realLogo(b)}</div>` : `<div class="biglogo">${phLogo(b, W * 0.72, size)}<span class="lgph">LOGO PLACEHOLDER</span></div>`;
   return el;
 }
 function rectTransform(r) { const W = innerWidth, H = innerHeight; return `translate(${r.left}px,${r.top}px) scale(${Math.max(.01, r.width / W)},${Math.max(.01, r.height / H)})`; }
@@ -518,6 +606,7 @@ async function closeBrand(opts = {}) {
 }
 function go(screen) {
   if (S.bv) { S.bv = null; renderBV(); }
+  S.sortOpen = false;
   if (screen === 'how' && S.screen !== 'how') { S.howBack = S.screen; S.howPage = 0; }
   if (screen === 'home') { S.tab = 'overall'; S.scroll.overall = 0; }
   S.screen = screen; renderBase({top: screen === 'home'});
@@ -525,14 +614,14 @@ function go(screen) {
 }
 function setTab(id, opts = {}) {
   if (!tabs().some(t => t.id === id)) return;
-  saveScroll(); S.tab = id; S.screen = 'home'; renderBase({crossfade: true, tabIntoView: true});
+  saveScroll(); S.tab = id; S.screen = 'home'; S.sortOpen = false; renderBase({crossfade: true, tabIntoView: true});
   if (opts.focus) { const t = base.querySelector(`.tab[data-tab="${CSS.escape(id)}"]`); t && t.focus(); }
 }
 function setSort(sid) {
   const sc = document.getElementById('scroller'), old = {};
   base.querySelectorAll('#rows .lb-row').forEach(el => { old[el.dataset.brand] = {top: el.getBoundingClientRect().top, w: (el.querySelector('.lb-bar') || {}).offsetWidth}; });
   S.sort[S.tab] = sid; renderBase({noGrow: true});
-  const chip = base.querySelector(`.chip[data-sort="${CSS.escape(sid)}"]`); if (chip) { chip.focus({preventScroll: true}); chip.scrollIntoView({block: 'nearest', inline: 'nearest'}); }
+  const sb = base.querySelector('.sortbtn'); if (sb) sb.focus({preventScroll: true});
   if (reduced()) { const rows = document.getElementById('rows'); rows && rows.animate([{opacity: 0}, {opacity: 1}], {duration: 200}); return; }
   base.querySelectorAll('#rows .lb-row').forEach(el => {
     const o = old[el.dataset.brand]; if (!o) return;
@@ -591,7 +680,7 @@ function keepLooking() { hideModal(); schedule(); }
 async function resetAll() {
   if (S.staff) { clearTimeout(staffT); closeStaffEl(); S.staff = null; pin = ''; }
   hideModal(); clearTimeout(idleT);
-  S.sort = {}; S.scroll = {}; S.howPage = 0; S.selected = null;
+  S.sort = {}; S.scroll = {}; S.howPage = 0; S.selected = null; S.sortOpen = false;
   if (S.bv) { await closeBrand({reset: true, force: true, instant: reduced()}); }
   S.screen = 'home'; S.tab = 'overall'; S.bv = null; renderBV(); renderBase({top: true});
   const sc = document.getElementById('scroller'); if (sc) sc.scrollTop = 0;
@@ -617,6 +706,9 @@ function cornerTap(e) {
   // ‹ Back sits partly inside the corner zone. A tap on it in the outer 20px edge (incl. iOS retargeting a near-miss onto it)
   // counts toward the gesture and is swallowed; a tap on the rest of Back works as Back.
   if (btn && btn.dataset.act === 'back' && (e.clientX <= EDGE || e.clientY <= EDGE)) btn = null;
+  // v2: the wordmark (= Home) sits under the corner zone on the leaderboard. Inside the 72px corner it counts toward the gesture and its
+  // click is swallowed, so Home never fires during the gesture (spec-v2 §2); the rest of the wordmark still works as Home.
+  if (btn && btn.classList.contains('wmbtn')) btn = null;
   if (btn && btn.id !== 'attract') return false;          // any other real button keeps working normally
   const now = Date.now(); cornerTaps = cornerTaps.filter(t => now - t < WINDOW_MS); cornerTaps.push(now);
   if (cornerTaps.length >= TAPS) { cornerTaps = []; openPinPad(); }
@@ -690,7 +782,9 @@ function onClick(e) {
   if (act === 'how-next') { S.howPage = Math.min(2, S.howPage + 1); return renderBase(); }
   if (act === 'report-back') { S.bv.report = null; return renderBV(); }
   if (t.dataset.tab) return setTab(t.dataset.tab);
-  if (t.dataset.sort) return setSort(t.dataset.sort);
+  if (act === 'sortmenu') { S.sortOpen = !S.sortOpen; renderBase({noGrow: true}); const f = base.querySelector(S.sortOpen ? '.sortmenu [aria-checked="true"]' : '.sortbtn'); f && f.focus({preventScroll: true}); return; }
+  if (act === 'sortclose') { S.sortOpen = false; renderBase({noGrow: true}); const sb = base.querySelector('.sortbtn'); sb && sb.focus({preventScroll: true}); return; }
+  if (t.dataset.sort) { S.sortOpen = false; return setSort(t.dataset.sort); }
   if (t.classList.contains('pick')) return openBrand(t.dataset.brand, S.tab, t);
   if (t.classList.contains('lb-row')) return openBrand(t.dataset.brand, S.tab, t);
   if (t.dataset.deck) { S.bv.deck = t.dataset.deck; S.bv.report = null; renderBV(); const d = bvl.querySelector(`[data-deck="${t.dataset.deck}"]`); d && d.focus({preventScroll: true}); return; }
@@ -730,6 +824,7 @@ function onKey(e) {
   if (S.attract) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); hideAttract(); } return; }
   if (S.modal) { if (e.key === 'Escape') keepLooking(); else activity(); return; }
   activity();
+  if (e.key === 'Escape' && S.sortOpen && !S.bv) { e.preventDefault(); S.sortOpen = false; renderBase({noGrow: true}); const sb = base.querySelector('.sortbtn'); sb && sb.focus({preventScroll: true}); return; }
   if (e.key === 'Escape' && S.bv && !S.busy) { e.preventDefault(); back(); }
   const tab = e.target.closest && e.target.closest('.tabs .tab');
   if (tab && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
@@ -758,7 +853,7 @@ function boot(data) {
   document.addEventListener('pointerup', onUp, true);
   document.addEventListener('keydown', onKey, true);
   document.addEventListener('wheel', activity, {passive: true, capture: true});
-  document.addEventListener('scroll', e => { activity(); if (e.target.classList && e.target.classList.contains('tabs')) updateTabFade(); if (e.target.matches && e.target.matches('.hero,.hcard,.about,.other,.picks')) updateFades(e.target.parentNode); }, true);
+  document.addEventListener('scroll', e => { activity(); if (e.target.classList && e.target.classList.contains('tabs')) updateTabFade(); if (e.target.matches && e.target.matches('.hero,.hcard,.about,.other,.picks,.scroller')) updateFades(e.target.parentNode); }, true);
   document.addEventListener('contextmenu', e => e.preventDefault());
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(ev => document.addEventListener(ev, e => e.preventDefault(), {passive: false}));
   document.addEventListener('touchmove', e => { if (e.touches && e.touches.length > 1) e.preventDefault(); }, {passive: false});   // pinch
@@ -767,7 +862,9 @@ function boot(data) {
   document.addEventListener('selectstart', e => e.preventDefault());
   document.addEventListener('dblclick', e => e.preventDefault(), {passive: false});
   document.addEventListener('dragstart', e => e.preventDefault());
-  window.addEventListener('resize', () => { updateTabFade(); updateFades(); });
+  window.addEventListener('resize', () => { updateTabFade(); updateFades(); if (base) fitHead(); placeWall(); });
+  if (QD('tab') && tabs().some(t => t.id === QD('tab'))) { S.tab = QD('tab'); if (QD('sort')) S.sort[S.tab] = QD('sort'); if (QD('menu')) S.sortOpen = true; renderBase({top: true}); }   // mockup deep links (local preview only)
+  RM.addEventListener && RM.addEventListener('change', () => { WALL.key = ''; placeWall(); });   // Reduce Motion toggled live: rebuild the wall static or moving
   schedule();
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 }
